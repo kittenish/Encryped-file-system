@@ -1,0 +1,103 @@
+\documentclass[11pt, oneside]{ctexart}
+\usepackage[a4paper,bindingoffset=0.2in,%
+            left=1in,right=1in,top=1in,bottom=1in,%
+            footskip=.25in]{geometry}
+\usepackage{graphicx}
+\usepackage{enumerate}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{pbox}
+\usepackage{CJKutf8}
+\usepackage{amsmath}
+\usepackage{arydshln}
+\usepackage{multirow}
+\usepackage{multicol}
+
+\begin{document}
+\title{加密文件系统设计}
+\author{高嘉蕊, 14307130345 \\ 计算机科学与技术学院}
+\maketitle
+
+\section{Server}
+服务器端只相当于物理存储，没有目录，全部扁平化拉平。保证服务器无法得到除了加密之后的文件内容之外的任何信息。同时对服务器的行为进行时时监测。
+
+
+\section{File System}
+\subsection{文件系统整体设计}
+在同一个文件系统中，为每个用户建立单独文件夹，对文件夹的创建目录或文件等操作真实在文件夹中操作，同时本地保存文件备份。基于Fuse重写各种命令保证保证用户只能回退到root，不能进入其他用户文件夹。用户分享过程中，为每一个分组单独创建文件夹。对每个分享组的用户而言，在自己的目录下也可以看到这个文件，但是实际文件的备份存储位置为分组中。
+
+对每一个用户，生成一对用于RSA加密的密钥$(n_1, e_1, d_1)$，一个用于DES加密的密钥$k$，用户负责保存私钥$(n_1, d_1)$。对每一个分享组，生成两对用于RSA加密的密钥$(n_1, e_1, d_1), (n_2, e_2, d_2)$，一个用于DES加密的密钥$k$，分享组中有读权限的用户保存$(n_1, d_1)$，有写权限的用户保存$(n_1, d_1), (n_2, d_2)$。
+
+在root目录中，保存四个文件：
+\begin{itemize}
+\item 全部用户公钥$(n_1, e_1)$；
+\item 全部用户非分享文件的$(n_1, e_1)$加密后的DES密钥$K$；
+\item 全部分享组的两组公钥$(n_1, e_1), (n_2, e_2)$；
+\item 全部分享文件的$(n_1, e_1)$加密后的DES密钥$K$。
+\end{itemize}
+
+每个用户目录中，保存一个文件：
+\begin{itemize}
+\item 全部共享文件的全部路径名；
+\item 全部共享文件的全部路径名与其映射的共享文件实际存储位置。
+\end{itemize}
+
+\subsection{加密过程}
+\subsubsection{文件名加密}
+用户使用公钥$(n_1, e_1)$加密文件全部路径，例如userA/path/file1.txt，作为上传服务器的名字，如果出现与服务器上的文件重名（可能性非常小），则要求用户重命名才可以上传。保证每个文件的路径名是不同的。
+
+分享组使用公钥$(n_1, e_1)$加密。其余同上。
+
+\subsubsection{文件内容加密}
+使用DES加密，密钥为$k$。$k$无需用户保存，使用RSA加密用户/分享组公钥$(n_1, e_1)$对$k$加密，之后保存在root目录下的文件中即可。
+
+\subsubsection{用户上传文件}\label{sec:user-upload}
+\begin{itemize}
+\item 用户用自己的私钥$(n_1, d_1)$解密得到root文件中自己的DES密钥$k$，用$k$对文件内容进行加密。
+\item 计算加密后文件（部分文件）的hash值，同时把这个值用自己的私钥$(n_1, d_1)$签名，加到文件的header中。
+\item 对文件全部路径用公钥$(n_1, e_1)$加密，之后上传到文件服务器。如果文件服务器上出现重名，要求用户对文件重命名。
+\item 把加密上传的文件同时备份在本地。
+\end{itemize}
+
+\subsubsection{用户读文件}\label{sec:user-read}
+\begin{itemize}
+\item 对想读的文件的全部路径用$(n_1, e_1)$加密，在server寻找对应文件下载下来。
+\item 对文件进行验证，使用$(n_1, e_1)$对前一次写的签名进行解密，得到的字符串应当为文件（部分文件）的hash值。如果不不符，认为服务器或者其他原因文件被非法修改，则重新上传本地备份的文件到服务器。
+\item 如果验证成功，则认为读取到正确文件。使用私钥$(n_1, d_1)$解密得到root文件中自己的DES密钥$k$，用$k$对文件解密。
+\end{itemize}
+
+\subsubsection{用户写文件}
+\begin{itemize}
+\item 首先按照Sec\ref{sec:user-read}读文件。
+\item 完成写文件操作之后，按照Sec\ref{sec:user-upload}上传。
+\item 更新本地加密的备份文件。
+\end{itemize}
+
+\subsubsection{用户分享文件}\label{sec:share}
+下面以用户userA把test.txt分享给userB读权限，userC读写权限为例：
+\begin{itemize}
+\item userA选择test.txt为分享文件，则如果之前上述三个人没有共享过文件，则创新新文件夹group\_userA\_userB\_userC，同时生成对应的密钥，更新root中的文件。
+\item 更新三个用户自己目录下存储的共享文件对应表，保证可以找到共享文件的实际存储位置。
+\item userA对按照Sec\ref{sec:user-read}读取文件，并删除服务器上的对应文件。
+\item userA使用分享组的$(n_1, e_1)$对分享组的DES密钥解密得到$k$，对test.txt加密。
+\item 计算加密后test.txt（部分文件）的hash值，同时把这个值用分享组的另一对私钥$(n_2, d_2)$加密签名，加到test.txt的header中。
+\item 删除A用户中原来的加密后的test.txt的备份，把新加密好的test.txt被分到路径group\_userA\_userB\_userC/test.txt中。
+\item 对test.txt的新路径公钥$(n_1, e_1)$加密，之后上传到文件服务器。如果文件服务器上出现重名，要求用户对文件重命名。
+\item userA把私钥$(n_1, d_1)$告诉有读权限的userB，把$(n_1, d_1), (n_2, d_2)$告诉有读写权限的userB。
+\end{itemize}
+
+\subsubsection{共享文件读写}
+通过Sec\ref{sec:share}可以看到，用户需要有$(n_1, d_1)$才能读文件，同时再有$(n_2, d_2)$才能对文件进行正确签名。注意在共享这里文件系统在：读文件、文件上传、备份文件更新之前都要进行签名检验。其余操作类似用户文件读写。
+
+\section{完成需求}
+由于服务器相当于物理存储，因此除了加密之后的文件内容外，得不到任何其他信息。
+
+文件系统除了实现基本需求外，由于它只保存相关公钥、加密过的DES密钥、加密过的备份文件。所以，不仅恶意用户无法破坏文件系统，即使恶意用户破坏了文件系统，也只能得到其他用户的文件目录和文件夹名信息。
+
+\section{存在问题}
+\begin{itemize}
+\item 用户需要保存的密钥太多，包括自己的私钥，以及每个分享组的私钥；
+\item 因为想要恢复被服务器非法更改的文件，只能进行文件本地备份。
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,14 @@
+
+kitten:rm /hey/dic/1.png
+kitten:mv /hey/dic/1.png
+kitten:rm /Users/mac/Desktop/system_security/pj/Encryped-file-system/src/file-system/kitten/test/1.png
+kitten:rm /Users/mac/Desktop/system_security/pj/Encryped-file-system/src/file-system/kitten/test/1.png
+kitten:rm /Users/mac/Desktop/system_security/pj/Encryped-file-system/src/file-system/kitten/test/.DS_Store
+kitten:rm /Users/mac/Desktop/system_security/pj/Encryped-file-system/src/file-system/kitten/test/.DS_Store
+kitten:rm /Users/mac/Desktop/system_security/pj/Encryped-file-system/src/file-system/kitten/test/1.png
+kitten:rm /Users/mac/Desktop/system_security/pj/Encryped-file-system/src/file-system/kitten/test/.DS_Store
+kitten:rm /Users/mac/Desktop/system_security/pj/Encryped-file-system/src/file-system/kitten/test/3.png
+kitten:rm /Users/mac/Desktop/system_security/pj/Encryped-file-system/src/file-system/kitten/test/.DS_Store
+kitten:rm /Users/mac/Desktop/system_security/pj/Encryped-file-system/src/file-system/kitten/test/test/.DS_Store
+kitten:rm /Users/mac/Desktop/system_security/pj/Encryped-file-system/src/file-system/kitten/test/.DS_Store
+kitten:rm /Users/mac/Desktop/system_security/pj/Encryped-file-system/src/file-system/kitten/test/屏幕快照 2017-06-26 下午5.09.34.png

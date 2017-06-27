@@ -8,7 +8,7 @@ import os
 import sys
 
 EFS_DIR = '/Users/mac/Desktop/system_security/pj/Encryped-file-system/src/file-system/'
-PASS = "sshpass -p 'gjr950614' "
+PASS = "sshpass -p 'pwd' "
 SERVER = ' gaojiarui@192.168.56.101:/home/gaojiarui/myserver/'
 SSH_SERVER = ' gaojiarui@192.168.56.101'
 SERVER_PATH = '/home/gaojiarui/myserver/'

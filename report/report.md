@@ -19,3 +19,16 @@
 * 恢复恶意文件服务器对文件的非法修改
 * 支持多用户
 * 恶意用户无法破坏文件系统，且即使破坏，无法获取关键信息
+
+## 代码结构
+
+* 运行 ./src/client.py 进行命令行交互
+* ./src/file_system.py 用于执行文件操作
+* ./src/encrypt.py 用于加密解密
+* ./src/test_file_system.py 测试文件系统
+* ./src/*.pem 为测试用户侧私钥
+* ./src/file-system 为文件系统实际存储备份文件位置
+* ./src/test-share 存储共享组私钥
+* 修改 ./src/file_system.py 文件服务器信息连接其他服务器
+
+## 
